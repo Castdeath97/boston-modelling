@@ -30,7 +30,6 @@ table = function(dataset, cap, dp = 3){
 
 ```
 
-
 \newpage
 
 # Introduction 
@@ -71,15 +70,67 @@ The following stands out of the plot:
 
 ## Data Relationships 
 
-### Pairs Plot and Correlation Matricies
+This section of the report will look into how the variables (predictors and response) in bivariate data relate and interact using numerical correlation matricies and graphic pairs plot
+
+### Pairs Plot 
+
+The following relationships stick out when observing the pairs plot for the response against other varibles in figure \@ref(fig:pairs-plot):
+
+* Relationships/correlation with lcrime:
+    + age and medv has a moderate negative relationship with lcrime 
+    + nox and lstat has a strong/moderate positive relationship with lcrim
+    + rm and zn both have weak/moderate negative relationships with lcrime
+    + tax, rad, pratio, indus and black appear to have unclear correlation
+    
+* Predictor variables relationships: 
+    - Some predictors have strong relations with one another: rm has a strong negative relationship with lstat but a strong positive one with medv. medv and lstat also have a strong negative relationship
+
+* Chas (river dummy variable) and disf (distance to boston employment centered) appear to have values in levels and are also diffuclt to analyse in a pairs plot
+
+
+### Correlation Matricies
+
+The correlation matrix in table \@ref(tab:cor-matrix) confirms the findings of the previous section but also helps clarify some of relationships that were unclear before: 
+
+* Chas has a very weak relationship with lcrime, and a weak or very weak relationship with most other variables.
+* disf has a moderate negative relationship with lcrime, a strong/moderate negative relationship with indus and a positive moderate relation with zn
+* Tax and rad have strong relationships with lcrime that were difficult to spot before due to irregularities in their plots. Moreover, indus has a moderate positive relationship with lcrime and ptartio a weak positive one.
+* Tax and rad have a very strong positive relationship
+
+### Data Relationships Summary
+
+To summarise, it seems that the relationships suggest that there are a couple of variables that might have a strong impact to model (e.g. tax). Moreover, the relationships also suggest that many will be subsetted due to relationships that can be repsented with other variables(e.g. rad), or very poor relationships with all variables (e.g. chas).
 
 \newpage
 
 # Unsupervised Learning
 
+This section looks into apply unsupervised learning techinques to help undertanding patterns and structures in the data to help understand their effects on the model. In this report, Principle Component Analysis will be used to help find which set of predictors cause the most variation on the data to help with model coefficient interpretation and gaining an understanding of which predictors contribute to the model. 
+
 ## Principle Component Analysis
 
-## Cluster Analysis
+### Variation Proportions
+
+Table \@ref(tab:pca-summary) shows the summary of Principle Component Analysis run on the data, showing the variance each principle contributes to and the accumulation of it. The summary shows that the first component contributed to 50% of the variance, and the first 4 contribute to 70%. Since the first 3 contribute to 70% and also where the variation curve in the scree plot in \@ref(fig:scree-plot) diminishes for a second time. 
+
+
+### Component Interpretation (According to Table \@ref(tab:pca-comps))
+
+#### Component 1
+
+Dominated by positive lcrime, tax, indus and nox. This means that it represents areas with large non-retail business but high crime and nitrogen oxide pollution.
+
+#### Component 2
+
+Dominated by negative rm and medv, meaning that it represents less median house values and number of rooms.
+
+#### Component 3
+
+Dominated high accessibility highways, tax rate and residual areas.
+
+#### Plot
+
+A plot of the observations scores for component 1 vs component2 is shown in figure \@ref(fig:pca-plot) shows most observations score high for component 2 but are more varied for component 1. Meaning that most observations have relative low medain house value and number of rooms, but a varied crime, pollution and non-retail business.
 
 \newpage
 
@@ -91,7 +142,51 @@ The following stands out of the plot:
 
 This section contains all supplementary material and is divided into three sections (Tables, Plots and Abbreviations). The code required to generate the supplementary material is also included
 
-## A.1 Abbrevations
+## A.1 Abbrevations and Shorthands
+
+## Variable Shorthands
+
+lcrim
+Natural logarithm of the per capita crime rate by town.
+
+zn
+Proportion of residential land zoned for lots over 25,000 sq.ft.
+
+indus
+Proportion of non-retail business acres per town.
+
+chas
+Charles River dummy variable (=1 if tract bounds river; =0 otherwise).
+
+nox
+Nitrogen oxides concentration (parts per 10 million).
+
+rm
+Average number of rooms per dwelling.
+
+age
+Proportion of owner-occupied units built prior to 1940.
+
+disf
+A numerical vector representing an ordered categorical variable with four levels depending on the weighted mean of the distances to five Boston employment centres (=1 if distance < 2.5, =2 if 2.5 <= distance < 5, =3 if 5 <= distance < 7.5, =4 if distance >= 7.5).
+
+rad
+Index of accessibility to radial highways.
+
+tax
+Full-value property-tax rate per $10,000.
+
+pratio
+Pupil-teacher ratio by town.
+
+black
+1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+
+lstat
+Lower status of the population (percent).
+
+medv
+Median value of owner-occupied homes in $1000s.
 
 \newpage
 
@@ -106,7 +201,7 @@ table(colMeans(Boston), '')
 
 ### Code to Generate Table \@ref(tab:cor-matrix) (Correct to 3DP)
 ```{r cor-matrix}
-table(var(Boston), 'Correlation Matrix (3DP)')
+table(cor(Boston), 'Correlation Matrix (3DP)')
 ```
 
 \newpage
