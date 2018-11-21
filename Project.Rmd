@@ -20,13 +20,14 @@ knitr::opts_chunk$set(echo = T, results = 'markup', message = F)
 library(nclSLR)
 library(knitr)
 library(leaps)
+library(glmnet)
 
 # Load the data
 data(Boston, package='nclSLR')
 
 # Table function with rounding (uses kable)
 table = function(dataset, cap, dp = 3){
-  kable(format(round(dataset, dp), nsmall = dp), caption = cap)
+   kable(format(round(dataset, dp), nsmall = dp), caption = cap)
 }
 
 # Table function (non num)
@@ -170,13 +171,29 @@ Also, it can be noticed that usually the highest impacting predictors in the PCs
 
 Nonetheless, to decide which number of predictors would be the best choice, there are various techniques that can be followed to evaluate whether removing variables is worthwhile (SSE based or MSE based). 
 
-The results using based SSE measurements (Adjusted R^2, BIC, Cp) are shown in figure \@ref(fig:best-sub-plot), and they show that generally the  gain from dropping out predictors is optimal somewhere around 5-10 before becoming worse. 
+The results using based SSE measurements (Adjusted $R^2$, BIC, $Cp$) are shown in figure \@ref(fig:best-sub-cv), and they show that generally the  gain from dropping out predictors is optimal somewhere around 5-10 before becoming worse. 
  
-For the K Fold Cross Validation (10 fold picked here) also shown in figure \@ref(fig:best-sub-plot), the best result occurs with 9 predictors which is similar with other results (and is identical to the adjusted Cp choice), and since this measurement is based on experimentation with tests errors it is preferred. The 10 Fold Cross Validation choice of 9 predictors would result in chas, rm, mdev and tax being removed from the model.   
+For the K Fold Cross Validation (10 fold picked here) also shown in figure \@ref(fig:best-sub-cv), the best result occurs with 9 predictors which is similar with other results (and is identical to the adjusted Cp choice), and since this measurement is based on experimentation with tests errors it is preferred. The 10 Fold Cross Validation choice of 9 predictors would result in chas, rm, mdev and tax being removed from the model.   
+
+#### Selected Subset Coefficient Discussion 
 
 ### Ridge Regression 
 
+Ridge Regression uses a modified loss function to add a penalety to large coefficients to improve predictive solution (constraints variance).
+
+#### Lambda Choice 
+
+#### Selected Lambda Coefficent Discussion 
+
 ### LASSO
+
+LASSO is quite similar to Ridge Regression, however unlike ridge regression which always gets all p variables LASSO can subset (coefficients can become zero). This is because of the modified $SS_E$ which takes the absolute value instead of the square of each coefficient. 
+
+#### Lambda Choice
+
+
+#### Selected Lambda Coefficent Discussion
+
 
 ## Model Evaluation Using k-fold Cross Validation 
 
@@ -198,7 +215,7 @@ PCA: Principle Component Analysis
 
 PC: Principle Component
 
-SSE: Residual Sum of Squares 
+$SS_E$: Residual Sum of Squares 
 
 MSE: Mean Square Error
 
@@ -206,7 +223,9 @@ $R^2$ or Rsq: Coefficient of Determination
 
 $C_p$: Mallow's $C_p$
 
-BIC: Bayesian information criterion
+BIC: Bayesian Information Criterion
+
+LASSO: Least Absolute Shrinkage and Selection Operator
 
 ### Variable Shorthands
 
@@ -284,6 +303,31 @@ tableTxt(bssSummary$outmat, "Best Subset Selection")
 
 \elandscape
 
+```{r best-sub-coef}
+# use coef function to find the coefficient 
+# id represents the choice for predictor number
+table(coef(bss, id = 9), "Best Subset Coefficient Selection (9 Predictors)")
+```
+
+
+```{r ridge-fit-coef}
+## Fit a ridge regression model with idea lambda (0.001)
+ridgeFit = glmnet(as.matrix(Boston[-1]), 
+                  as.vector(Boston$lcrim), alpha=0, standardize=FALSE, lambda=0.001)
+table(as.data.frame(as.matrix(coef(ridgeFit, s = 0.001))),
+      "Ridge Regression Coefficients with Lambda = 0.001")
+```
+
+
+```{r lasso-coef}
+## Fit a LASSO regression model with idea lambda (0.001)
+lassoFit = glmnet(as.matrix(Boston[-1]), 
+                  as.vector(Boston$lcrim), alpha=1, standardize=FALSE, lambda=0.001)
+table(as.data.frame(as.matrix(coef(lassoFit, s = 0.001))),
+      "LASSO Coefficients with Lambda = 0.001")
+```
+
+
 \newpage
 
 ## A.3 Plots
@@ -322,8 +366,8 @@ plot(pca$x[,1], pca$x[,2], main ="Principle Component 1 vs 2 for Boston Housing 
 
 \newpage
 
-### Code to Generate Figure \@ref(fig:best-sub-plot)
-```{r best-sub-plot, fig.cap='Best Subset Predictor Selection'}
+### Code to Generate Figure \@ref(fig:best-sub-cv)
+```{r best-sub-cv, fig.cap='Best Subset Predictor Selection'}
 
 # *** SSE Based Measurements ***
 
@@ -401,5 +445,60 @@ points(bestBic, bssSummary$bic[bestBic], col="red", pch=16)
 
 plot(1:p, bssMse, xlab="Number of predictors", ylab="10-fold CV Error", type="b")
 points(bestCv, bssMse[bestCv], col="red", pch=16)
+```
+
+\newpage
+
+### Code to Generate Figure \@ref(fig:ridge-fit-lambdas) 
+```{r ridge-fit-lambdas, fig.cap="Ridge Fit Coefficents versus Lambdas"}
+# grid of values for lambda (10^5 to 10^-3)
+grid = 10^seq(5, -3, length=100)
+
+## Fit a ridge regression model for each value of the tuning parameter
+ridgeFit = glmnet(as.matrix(Boston[-1]), 
+                  as.vector(Boston$lcrim), alpha=0, standardize=FALSE, lambda=grid)
+
+plot(ridgeFit, xvar="lambda", col=1:13, label=TRUE)
+```
+
+\newpage
+
+### Code to Generate Figure \@ref(fig:ridge-fit-cv) with Minimum Result
+```{r ridge-fit-cv, fig.cap="Ridge Fit 10 Fold Cross Validation"}
+# Fit a ridge regression model using all lambdas with cv validation
+# 0 -> Ridge regression not LASSO
+ridgeFitCv = cv.glmnet(as.matrix(Boston[-1]), 
+                       as.vector(Boston$lcrim), alpha=0, standardize=FALSE, lambda=grid)
+
+plot(ridgeFitCv) # plot cross validated error
+
+# Find exact minimum
+(lambdaMin = ridgeFitCv$lambda.min)
+```
+
+\newpage
+
+### Code to Generate Figure \@ref(fig:lasso-lambdas) 
+```{r lasso-lambdas, fig.cap="LASSO Coefficents versus Lambdas"}
+# Fit a ridge regression model for each value of the tuning parameter
+lasso = glmnet(as.matrix(Boston[-1]), 
+               as.vector(Boston$lcrim), alpha=1, standardize=FALSE, lambda=grid)
+
+plot(lasso, xvar="lambda", col=1:13, label=TRUE)
+```
+
+\newpage
+
+### Code to Generate Figure \@ref(fig:lasso-cv) with Minimum Result
+```{r lasso-cv, fig.cap="LASSO 10 Fold Cross Validation"}
+# Fit a ridge regression model using all lambdas with cv validation
+# 0 -> Ridge regression not LASSO
+lassoCv = cv.glmnet(as.matrix(Boston[-1]), 
+                    as.vector(Boston$lcrim), alpha=1, standardize=FALSE, lambda=grid)
+
+plot(ridgeFitCv) # plot cross validated error
+
+# Find exact minimum
+(lambdaMin = lassoCv$lambda.min)
 ```
 
