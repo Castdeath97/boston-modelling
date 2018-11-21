@@ -19,6 +19,7 @@ knitr::opts_chunk$set(echo = T, results = 'markup', message = F)
 # Load packages
 library(nclSLR)
 library(knitr)
+library(leaps)
 
 # Load the data
 data(Boston, package='nclSLR')
@@ -28,6 +29,19 @@ table = function(dataset, cap, dp = 3){
   kable(format(round(dataset, dp), nsmall = dp), caption = cap)
 }
 
+# Table function (non num)
+tableTxt = function(dataset, cap){
+  kable(dataset, caption = cap)
+}
+
+# Predict for reg subsets (no predict function)
+predict.regsubsets = function(object, newdata, id, ...) {
+  form = as.formula(object$call[[2]])
+  mat = model.matrix(form, newdata)
+  coefi = coef(object, id=id)
+  xvars = names(coefi)
+  return(mat[,xvars] %*% coefi)
+}
 ```
 
 \newpage
@@ -56,25 +70,25 @@ Examining the structure of the variables in the Boston data set using the ?Bosto
 
 ### Box Plot and Quantiles
 
-As previously stated in the previous section, the variables are of different natures and scales, hence any scale to scale comparsion needs standarisation. To standardise the data a scale transform was applied using the base R scale() function, and using the boxplot base function the plot in figure \@ref(fig:box-plot) is generated. 
+As previously stated in the previous section, the variables are of different natures and scales, hence any scale to scale comparison needs standarisation. To standardise the data a scale transform was applied using the base R scale() function, and using the boxplot base function the plot in figure \@ref(fig:box-plot) is generated. 
 
 The following stands out of the plot:
 
 * black, rm, zn and medv predictor variables have significantly more outliers than the other variables.And hence more uncertain and also their averages can get skewed.
 
-* chas predictor variable semms to have a very tight ranges that are practicaly identical. This is because this is a binary variable.
+* chas predictor variable seems to have a very tight ranges that are practically identical. This is because this is a binary variable.
 
 * zn, rad and tax predictor variables have a short Q1 to Q2 range compared to the Q2 to Q3 range, suggesting that the lower values of the data are very tightly clustered. black has the opposite problem.
 
-* rm, lstat, mdev and ptratio have long minimum and maximum ranges in comparision to their IQR ranges, and hence more exterme values. This means that rheir averages can get skewed.
+* rm, lstat, mdev and ptratio have long minimum and maximum ranges in comparison to their IQR ranges, and hence more extreme values. This means that their averages can get skewed.
 
 ## Data Relationships 
 
-This section of the report will look into how the variables (predictors and response) in bivariate data relate and interact using numerical correlation matricies and graphic pairs plot
+This section of the report will look into how the variables (predictors and response) in bivariate data relate and interact using numerical correlation matrices and graphic pairs plot
 
 ### Pairs Plot 
 
-The following relationships stick out when observing the pairs plot for the response against other varibles in figure \@ref(fig:pairs-plot):
+The following relationships stick out when observing the pairs plot for the response against other variables in figure \@ref(fig:pairs-plot):
 
 * Relationships/correlation with lcrime:
     + age and medv has a moderate negative relationship with lcrime 
@@ -85,7 +99,7 @@ The following relationships stick out when observing the pairs plot for the resp
 * Predictor variables relationships: 
     - Some predictors have strong relations with one another: rm has a strong negative relationship with lstat but a strong positive one with medv. medv and lstat also have a strong negative relationship
 
-* Chas (river dummy variable) and disf (distance to boston employment centered) appear to have values in levels and are also diffuclt to analyse in a pairs plot
+* Chas (river dummy variable) and disf (distance to Boston employment centered) appear to have values in levels and are also difficult to analyse in a pairs plot
 
 
 ### Correlation Matricies
@@ -99,19 +113,19 @@ The correlation matrix in table \@ref(tab:cor-matrix) confirms the findings of t
 
 ### Data Relationships Summary
 
-To summarise, it seems that the relationships suggest that there are a couple of variables that might have a strong impact to model (e.g. tax). Moreover, the relationships also suggest that many will be subsetted due to relationships that can be repsented with other variables(e.g. rad), or very poor relationships with all variables (e.g. chas).
+To summarise, it seems that the relationships suggest that there are a couple of variables that might have a strong impact to model (e.g. rad or tax). Moreover, the relationships also suggest that many will be subsetted due to relationships that can be represented with other variables(e.g. rad or tax), or very poor relationships with all variables (e.g. chas).
 
 \newpage
 
 # Unsupervised Learning
 
-This section looks into apply unsupervised learning techinques to help undertanding patterns and structures in the data to help understand their effects on the model. In this report, Principle Component Analysis will be used to help find which set of predictors cause the most variation on the data to help with model coefficient interpretation and gaining an understanding of which predictors contribute to the model. 
+This section looks into apply unsupervised learning techniques to help understanding patterns and structures in the data to help understand their effects on the model. In this report, Principle Component Analysis will be used to help find which set of predictors cause the most variation on the data to help with model coefficient interpretation and gaining an understanding of which predictors contribute to the model. 
 
 ## Principle Component Analysis
 
 ### Variation Proportions
 
-Table \@ref(tab:pca-summary) shows the summary of Principle Component Analysis run on the data, showing the variance each principle contributes to and the accumulation of it. The summary shows that the first component contributed to 50% of the variance, and the first 4 contribute to 70%. Since the first 3 contribute to 70% and also where the variation curve in the scree plot in \@ref(fig:scree-plot) diminishes for a second time. 
+Table \@ref(tab:pca-summary) shows the summary of PCA run on the data, showing the variance each PC to and the accumulation of it. The summary shows that the first component contributed to 50% of the variance, and the first 4 contribute to 70%. Since the first 3 contribute to 70% and also where the variation curve in the scree plot in \@ref(fig:scree-plot) diminishes for a second time. 
 
 
 ### Component Interpretation (According to Table \@ref(tab:pca-comps))
@@ -130,11 +144,43 @@ Dominated high accessibility highways, tax rate and residual areas.
 
 #### Plot
 
-A plot of the observations scores for component 1 vs component2 is shown in figure \@ref(fig:pca-plot) shows most observations score high for component 2 but are more varied for component 1. Meaning that most observations have relative low medain house value and number of rooms, but a varied crime, pollution and non-retail business.
+A plot of the observations scores for component 1 vs component2 is shown in figure \@ref(fig:pca-plot) shows most observations score high for component 2 but are more varied for component 1. Meaning that most observations have relative low median house value and number of rooms, but a varied crime, pollution and non-retail business.
 
 \newpage
 
-# Supervised Learning (Linear Model)
+# Supervised Learning (Linear Modelling)
+
+In this section of the report linear models are fitting and tested against each other using K Fold Cross Validation. By the end of this section a summary will conclude which models are best and why.
+
+## Model Fitting 
+
+### Subset Selection using Best Fit
+
+Best Fit Subset Selection Tries all possible predictors p combinations to find the "best" model using SSE (optimisation problem). The method's results are shown in table \@ref(tab:best-sub-select) as the selected best predictors from 13 variables (everything except lcrime) to 1 variable.
+
+#### Subsetting Results analysis
+
+When we look at the results we can notice that the first variable to be dropped is tax. tax being the first dropped predictor seems to lines up with the discussion in the Data Relationships Summary, as it was stated that either tax/rad can be represented by the other (and hence can be dropped). 
+
+Moreover it was also stated in the Relationships summary that chas correlated little to lcrime and other variables (little to no prediction can be made with it), so it's no surprise that it was dropped second. 
+
+Also, it can be noticed that usually the highest impacting predictors in the PCs stick for longer before dropping with a few exceptions. This particularly true for PC1, as with the exception of tax (which was subsetted for rad) some of the high scoring variables stuck around for long (e.g. nox), which is not surprising since it would be sensible for the most variation causing variables to cause variation to lcrim (and hence become important for prediction).
+
+#### Which Subset to Select
+
+Nonetheless, to decide which number of predictors would be the best choice, there are various techniques that can be followed to evaluate whether removing variables is worthwhile (SSE based or MSE based). 
+
+The results using based SSE measurements (Adjusted R^2, BIC, Cp) are shown in figure \@ref(fig:best-sub-plot), and they show that generally the  gain from dropping out predictors is optimal somewhere around 5-10 before becoming worse. 
+ 
+For the K Fold Cross Validation (10 fold picked here) also shown in figure \@ref(fig:best-sub-plot), the best result occurs with 9 predictors which is similar with other results (and is identical to the adjusted Cp choice), and since this measurement is based on experimentation with tests errors it is preferred. The 10 Fold Cross Validation choice of 9 predictors would result in chas, rm, mdev and tax being removed from the model.   
+
+### Ridge Regression 
+
+### LASSO
+
+## Model Evaluation Using k-fold Cross Validation 
+
+## Best Model Discussion and Conclusions
 
 \newpage
 
@@ -144,49 +190,53 @@ This section contains all supplementary material and is divided into three secti
 
 ## A.1 Abbrevations and Shorthands
 
-## Variable Shorthands
+### Abbrevations
 
-lcrim
-Natural logarithm of the per capita crime rate by town.
+(X)DP: X Decimal Points
 
-zn
-Proportion of residential land zoned for lots over 25,000 sq.ft.
+PCA: Principle Component Analysis
 
-indus
-Proportion of non-retail business acres per town.
+PC: Principle Component
 
-chas
-Charles River dummy variable (=1 if tract bounds river; =0 otherwise).
+SSE: Residual Sum of Squares 
 
-nox
-Nitrogen oxides concentration (parts per 10 million).
+MSE: Mean Square Error
 
-rm
-Average number of rooms per dwelling.
+$R^2$ or Rsq: Coefficient of Determination
 
-age
-Proportion of owner-occupied units built prior to 1940.
+$C_p$: Mallow's $C_p$
 
-disf
-A numerical vector representing an ordered categorical variable with four levels depending on the weighted mean of the distances to five Boston employment centres (=1 if distance < 2.5, =2 if 2.5 <= distance < 5, =3 if 5 <= distance < 7.5, =4 if distance >= 7.5).
+BIC: Bayesian information criterion
 
-rad
-Index of accessibility to radial highways.
+### Variable Shorthands
 
-tax
-Full-value property-tax rate per $10,000.
+lcrim: Natural logarithm of the per capita crime rate by town.
 
-pratio
-Pupil-teacher ratio by town.
+zn: Proportion of residential land zoned for lots over 25,000 sq.ft.
 
-black
-1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+indus: Proportion of non-retail business acres per town.
 
-lstat
-Lower status of the population (percent).
+chas: Charles River dummy variable (=1 if tract bounds river; =0 otherwise).
 
-medv
-Median value of owner-occupied homes in $1000s.
+nox: Nitrogen oxides concentration (parts per 10 million).
+
+rm: Average number of rooms per dwelling.
+
+age: Proportion of owner-occupied units built prior to 1940.
+
+disf: A numerical vector representing an ordered categorical variable with four levels depending on the weighted mean of the distances to five Boston employment centres (=1 if distance < 2.5, =2 if 2.5 <= distance < 5, =3 if 5 <= distance < 7.5, =4 if distance >= 7.5).
+
+rad: Index of accessibility to radial highways.
+
+tax: Full-value property-tax rate per $10,000.
+
+pratio: Pupil-teacher ratio by town.
+
+black: 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+
+lstat: Lower status of the population (percent).
+
+medv: Median value of owner-occupied homes in $1000s.
 
 \newpage
 
@@ -217,6 +267,19 @@ table(summary(pca)$importance, 'PCA Summary (Contribution to Variation)')
 ```{r pca-comps}
 # List PC 1, 2 and 3 
 table(pca$rotation[,1:3], 'PCA Components')
+```
+
+\newpage
+
+### Code to Generate Table \@ref(tab:best-sub-select)
+```{r best-sub-select}
+# fit model
+bss = regsubsets(lcrim ~ ., data=Boston, method="exhaustive", nvmax= 13)
+
+# Summarise
+bssSummary = summary(bss)
+
+tableTxt(bssSummary$outmat, "Best Subset Selection")
 ```
 
 \elandscape
@@ -256,3 +319,87 @@ title(xlab='Principle Component number')
 plot(pca$x[,1], pca$x[,2], main ="Principle Component 1 vs 2 for Boston Housing Values",
      xlab="Component 1", ylab="Component 2")
 ```
+
+\newpage
+
+### Code to Generate Figure \@ref(fig:best-sub-plot)
+```{r best-sub-plot, fig.cap='Best Subset Predictor Selection'}
+
+# *** SSE Based Measurements ***
+
+# Find best score for SSE based measurements (already done by bss summary)
+bestAdjr2 = which.max(bssSummary$adjr2)
+bestCp = which.min(bssSummary$cp)
+bestBic = which.min(bssSummary$bic)
+
+# *** 10 fold cross validation ***
+
+# 10 fold cv
+
+# Set the seed to make the analysis reproducible
+set.seed(1)
+
+# 10-fold cross validation
+nFolds = 10
+
+# Find n and p
+p = ncol(Boston) - 1 # number of predictors (no lcrim)
+n = nrow(Boston)
+
+# Sample fold-assignment index
+foldIndex = sample(nFolds, n, replace=TRUE)
+
+# Hold fold sizes 
+foldSizes = numeric(nFolds)
+
+# Compute fold sizes
+for(k in 1:nFolds) foldSizes[k] = length(which(foldIndex==k))
+
+# create the matrix to store the folds
+cvBssErrors = matrix(NA, p, nFolds)
+
+# Find MSEs for all fold combination
+for(k in 1:nFolds) {
+  # Fit models by best-subset selection (no k-th fold)
+  bssTmpFit = 
+    regsubsets(lcrim ~ ., data=Boston[foldIndex!=k,], method="exhaustive", nvmax=p)
+  
+  # For each model M_m where m=1,...,p:
+  for(m in 1:p) {
+    # Compute fitted values for the k-th fold 
+    bssTmpPredict = predict(bssTmpFit, Boston[foldIndex==k,], m)
+    # Work out MSE for the k-th fold
+    cvBssErrors[m, k] = mean((Boston[foldIndex==k,]$lcrim - bssTmpPredict)^2)
+  }
+}
+
+# Compute a weighted average MSE
+bssMse = numeric(p)
+# For models M_1,...,M_p:
+for(m in 1:p) {
+  bssMse[m] = weighted.mean(cvBssErrors[m,], w=foldSizes)
+}
+
+# Identify model with the lowest MSE
+bestCv = which.min(bssMse)
+
+# *** Plotting ***
+
+# Create multi-panel plotting device:
+par(mfrow=c(2,2))
+
+# Produce plots, highlighting optimal value of preductors:
+plot(1:13, bssSummary$adjr2, xlab="Number of predictors", ylab="Adjusted Rsq",
+type="b")
+points(bestAdjr2, bssSummary$adjr2[bestAdjr2], col="red", pch=16)
+
+plot(1:13, bssSummary$cp, xlab="Number of predictors", ylab="Cp", type="b")
+points(bestCp, bssSummary$cp[bestCp], col="red", pch=16)
+
+plot(1:13, bssSummary$bic, xlab="Number of predictors", ylab="BIC", type="b")
+points(bestBic, bssSummary$bic[bestBic], col="red", pch=16)
+
+plot(1:p, bssMse, xlab="Number of predictors", ylab="10-fold CV Error", type="b")
+points(bestCv, bssMse[bestCv], col="red", pch=16)
+```
+
