@@ -157,7 +157,7 @@ In this section of the report linear models are fitting and tested against each 
 
 ### Subset Selection using Best Fit
 
-Best Fit Subset Selection Tries all possible predictors p combinations to find the "best" model using SSE (optimisation problem). The method's results are shown in table \@ref(tab:best-sub-select) as the selected best predictors from 13 variables (everything except lcrime) to 1 variable.
+Best Fit Subset Selection Tries all possible predictors p combinations to find the "best" model using $SS_E$ (optimisation problem). The method's results are shown in table \@ref(tab:best-sub-select) as the selected best predictors from 13 variables (everything except lcrime) to 1 variable.
 
 #### Subsetting Results analysis
 
@@ -169,21 +169,27 @@ Also, it can be noticed that usually the highest impacting predictors in the PCs
 
 #### Which Subset to Select
 
-Nonetheless, to decide which number of predictors would be the best choice, there are various techniques that can be followed to evaluate whether removing variables is worthwhile (SSE based or MSE based). 
+Nonetheless, to decide which number of predictors would be the best choice, there are various techniques that can be followed to evaluate whether removing variables is worthwhile ($SS_E$ based or MSE based). 
 
-The results using based SSE measurements (Adjusted $R^2$, BIC, $Cp$) are shown in figure \@ref(fig:best-sub-cv), and they show that generally the  gain from dropping out predictors is optimal somewhere around 5-10 before becoming worse. 
+The results using based $SS_E$ measurements (Adjusted $R^2$, BIC, $Cp$) are shown in figure \@ref(fig:best-sub-cv), and they show that generally the  gain from dropping out predictors is optimal somewhere around 5-10 before becoming worse. 
  
 For the K Fold Cross Validation (10 fold picked here) also shown in figure \@ref(fig:best-sub-cv), the best result occurs with 9 predictors which is similar with other results (and is identical to the adjusted Cp choice), and since this measurement is based on experimentation with tests errors it is preferred. The 10 Fold Cross Validation choice of 9 predictors would result in chas, rm, mdev and tax being removed from the model.   
 
-#### Selected Subset Coefficient Discussion 
+#### Selected Subset Coefficient Discussion
+
+The resulting coefficients for the selected predictors is shown in table \@ref(tab:best-sub-coef), and seems to show nox and rad as the strongest positively influencing predictors. This lines up with nox and rad positive strength in the first PC in the PCA analysis and their strong positive correlation. The same can be observed with the strongest negative component (disf), but not with age surprisingly (one of the strong negative coefficients in PC1). This is probably because not all variation it causes leads to variation in lcrim specifically (after all it has lower absolute correlation compared to rad and nox) and because perhaps it can be represented by other predictors (disf has moderate/strong correlation to it).
 
 ### Ridge Regression 
 
-Ridge Regression uses a modified loss function to add a penalety to large coefficients to improve predictive solution (constraints variance).
+Ridge Regression uses a modified loss function to add a penalty to large coefficients to improve predictive solution (constraints variance).
 
 #### Lambda Choice 
 
+Lambda decides how much the algorithm penalties large coefficient, the more it does so the more the values slope down as seen in figure \@ref(fig:ridge-fit-lambdas). Most of the values seem to start low and slope slowly, except nox(7), disf(7) and rad(8), with nox especially dominating the coefficient sizes before dropping next to lambda 0. Nonetheless, to know which lambda choice would make the most sense, a 10 fold cross validation is carried in figure \@ref(fig:ridge-fit-cv) and shows that the MSE start low and only starts to pick pace and go up once it crosses midway between $log(lambda) = 0$ and $log(lambda) = 5$. The exact minimum MSD is not clear from the graph, but using the "lambda.min" field returns a 0.001 for the lambda also as seen in figure's \@ref(fig:ridge-fit-cv) code.
+
 #### Selected Lambda Coefficent Discussion 
+
+As seen in figure \@ref(fig:ridge-fit-lambdas), nox(7), disf(7) and rad(8) seemed to be the most dominant coefficient and this can also be observed in the exact values with ideal lambda (0.001) seen in table \@ref(tab:ridge-fit-coef). The coefficients selected seem similar to the coefficients seen with best subset selection, but lower due to the size penalty added by Ridge Regression. Nonetheless, just like the Best Subset coefficient, the values most correlated to lcrime and the strongest in PC1 generally being the most dominant as discussed with the Best Subset coefficients. 
 
 ### LASSO
 
@@ -191,9 +197,12 @@ LASSO is quite similar to Ridge Regression, however unlike ridge regression whic
 
 #### Lambda Choice
 
+Similarly to Ridge Regression, lambda decides how much the algorithm penalises large coefficients. The values of coefficients against lambda can be seen in \@ref(fig:lasso-lambdas), which is quite similar to the results with Ridge Regression but the coefficent seem closer to zero (as some of them would actual equal it!). Nonetheless, as with Ridge Regression, to find the ideal lambda value MSE in a 10 fold cross validation is used, and as seen in \@ref(fig:ridge-fit-cv) the results are quite similar to Ridge Regression and in fact they both have the same lambda for the minimum MSE (0.001).
+
 
 #### Selected Lambda Coefficent Discussion
 
+The values for the coefficients are quite similar to Ridge Regression coeficients with minor differences, but since LASSO's main difference with Ridge Regression is its ability to subset the predictors they will be the main concern of this discussion. It seems LASSO decided to only subset tax out (at least correct to 3 DP), which is probably because it can be easily represnted with rad due to their strong correlation as seen in the Data Relationships section 
 
 ## Model Evaluation Using k-fold Cross Validation 
 
@@ -203,7 +212,7 @@ LASSO is quite similar to Ridge Regression, however unlike ridge regression whic
 
 # Appendix 
 
-This section contains all supplementary material and is divided into three sections (Tables, Plots and Abbreviations). The code required to generate the supplementary material is also included
+This section contains all supplementary material and is divided into three sections (Tables, Plots and "Abbreviations and Short hands"). The code required to generate the supplementary material is also included
 
 ## A.1 Abbrevations and Shorthands
 
@@ -455,6 +464,7 @@ points(bestCv, bssMse[bestCv], col="red", pch=16)
 grid = 10^seq(5, -3, length=100)
 
 ## Fit a ridge regression model for each value of the tuning parameter
+# alpha 0 -> Ridge regression not LASSO
 ridgeFit = glmnet(as.matrix(Boston[-1]), 
                   as.vector(Boston$lcrim), alpha=0, standardize=FALSE, lambda=grid)
 
@@ -466,7 +476,7 @@ plot(ridgeFit, xvar="lambda", col=1:13, label=TRUE)
 ### Code to Generate Figure \@ref(fig:ridge-fit-cv) with Minimum Result
 ```{r ridge-fit-cv, fig.cap="Ridge Fit 10 Fold Cross Validation"}
 # Fit a ridge regression model using all lambdas with cv validation
-# 0 -> Ridge regression not LASSO
+# alpha 0 -> Ridge regression not LASSO
 ridgeFitCv = cv.glmnet(as.matrix(Boston[-1]), 
                        as.vector(Boston$lcrim), alpha=0, standardize=FALSE, lambda=grid)
 
@@ -481,6 +491,7 @@ plot(ridgeFitCv) # plot cross validated error
 ### Code to Generate Figure \@ref(fig:lasso-lambdas) 
 ```{r lasso-lambdas, fig.cap="LASSO Coefficents versus Lambdas"}
 # Fit a ridge regression model for each value of the tuning parameter
+# alpha 1 -> LASSO
 lasso = glmnet(as.matrix(Boston[-1]), 
                as.vector(Boston$lcrim), alpha=1, standardize=FALSE, lambda=grid)
 
@@ -492,7 +503,7 @@ plot(lasso, xvar="lambda", col=1:13, label=TRUE)
 ### Code to Generate Figure \@ref(fig:lasso-cv) with Minimum Result
 ```{r lasso-cv, fig.cap="LASSO 10 Fold Cross Validation"}
 # Fit a ridge regression model using all lambdas with cv validation
-# 0 -> Ridge regression not LASSO
+# aplha 1 -> LASSO
 lassoCv = cv.glmnet(as.matrix(Boston[-1]), 
                     as.vector(Boston$lcrim), alpha=1, standardize=FALSE, lambda=grid)
 
