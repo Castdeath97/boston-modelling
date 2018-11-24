@@ -188,9 +188,9 @@ The values for the coefficients are quite similar to Ridge Regression coeficient
 
 To evaluate all the models using cross validation, it is important to ensure that they use the same folds for the cross validation. To do this, the indexes for the folds for subset cross validation (using 10 folds) are passed to the regularisation fittings (LASSO and Ridge). The results are presented in Figure \@ref(fig:cv-comparisons). 
 
-As seen in figure \@ref(fig:cv-comparisons) the regularisation methods (LASSO and Ridge Fit) seems to perform significantly better than the subsetting method (Best Fit). This is probably because while Best Fit selects the best set of predictors for a given model size, its larger coefficient leads to larger variation in the estimator weakening the predictions. 
+As seen in figure \@ref(fig:cv-comparisons) the regularisation methods (LASSO and Ridge Fit) and the subsetting method (Best Fit) seem to perform similarily for the given data. Best Fit seems to be the best, then LASSO then Ridge Fit. 
 
-When it comes to the regularisation methods, LASSO seems to perform slightly better because of subsetting out uneeded predictors. Moreover, since LASSO requires less predictors it should be more convienent and easier to use and hence is my choice of all the three methods. LASSO had subsetted out chas, rm, tax and medv as stated before either because they had poor correlation with the response (lcrim) or could be represented by other predictors (rm, tax and medv). 
+Nonetheless, the regularisation methods would be the better bet, since Best Fit is incredibly slow due its exhaustive methods and the advantage is that it provides in exchange is small. For the regularisation methods, since LASSO requires less predictors it should be more convienent and easier to use and hence is my choice of out of the two. LASSO had subsetted out chas, rm, tax and medv as stated before either because they had poor correlation with the response (lcrim) or could be represented by other predictors (rm, tax and medv). 
 
 \newpage
 
@@ -516,7 +516,7 @@ plot(lasso, xvar="lambda", col=1:13, label=TRUE)
 # aplha 1 -> LASSO
 lassoCv = cv.glmnet(X, y, alpha=1, standardize=FALSE, lambda=grid)
 
-plot(ridgeFitCv) # plot cross validated error
+plot(lassoCv) # plot cross validated error
 
 # Find exact minimum
 (lambdaMin = lassoCv$lambda.min)
@@ -530,14 +530,20 @@ plot(ridgeFitCv) # plot cross validated error
 lassoCv = cv.glmnet(X, y, alpha=1, standardize=FALSE, lambda=grid, foldid = foldIndex)
 ridgeFitCv = cv.glmnet(X, y, alpha=0, standardize=FALSE, lambda=grid, foldid = foldIndex)
 
+i = which(ridgeFitCv$lambda == ridgeFitCv$lambda.min)
+ridgeFitError = ridgeFitCv$cvm[i]
+
+j = which(lassoCv$lambda == lassoCv$lambda.min)
+lassoError = lassoCv$cvm[j]
+
 # make bar plot of minimum MSEs for selected predictors and lambdas
-errors = c(lassoCv$lambda.min, ridgeFitCv$lambda.min, bssMse[9])
+errors = c(lassoError, ridgeFitError, bssMse[9])
 names(errors) = c("LASSO", "Ridge Fit", "Best Fit")
 barplot(errors, xlab = "Fitting Method", ylab = "Mean Square Error for CV")
 
 # Exact values
-lassoCv$lambda.min 
-ridgeFitCv$lambda.min 
-bssMse[9]
+lassoError # LASSO MSE
+ridgeFitError # Ridge Fit MSE
+bssMse[9] # Best Fit MSE
 ```
 
