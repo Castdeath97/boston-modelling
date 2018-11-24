@@ -24,25 +24,6 @@ library(glmnet)
 
 # Load the data
 data(Boston, package='nclSLR')
-
-# Table function with rounding (uses kable)
-table = function(dataset, cap, dp = 3){
-   kable(format(round(dataset, dp), nsmall = dp), caption = cap)
-}
-
-# Table function (non num)
-tableTxt = function(dataset, cap){
-  kable(dataset, caption = cap)
-}
-
-# Predict for reg subsets (no predict function)
-predict.regsubsets = function(object, newdata, id, ...) {
-  form = as.formula(object$call[[2]])
-  mat = model.matrix(form, newdata)
-  coefi = coef(object, id=id)
-  xvars = names(coefi)
-  return(mat[,xvars] %*% coefi)
-}
 ```
 
 \newpage
@@ -177,7 +158,7 @@ For the K Fold Cross Validation (10 fold picked here) also shown in figure \@ref
 
 #### Selected Subset Coefficient Discussion
 
-The resulting coefficients for the selected predictors is shown in table \@ref(tab:best-sub-coef), and seems to show nox and rad as the strongest positively influencing predictors. This lines up with nox and rad positive strength in the first PC in the PCA analysis and their strong positive correlation. The same can be observed with the strongest negative component (disf), but not with age surprisingly (one of the strong negative coefficients in PC1). This is probably because not all variation it causes leads to variation in lcrim specifically (after all it has lower absolute correlation compared to rad and nox) and because perhaps it can be represented by other predictors (disf has moderate/strong correlation to it).
+The resulting coefficients for the selected predictors is shown in table \@ref(tab:best-sub-coef), and seems to show nox and rad as the strongest positively influencing predictors. This lines up with nox and rad positive strength in the first PC in the PCA analysis and their strong positive correlation. The same can be observed with the strongest negative component (disf anad age), which also were strong in PC1 and had strong/moderate negative correlation with lcrim . 
 
 ### Ridge Regression 
 
@@ -212,7 +193,7 @@ The values for the coefficients are quite similar to Ridge Regression coeficient
 
 # Appendix 
 
-This section contains all supplementary material and is divided into three sections (Tables, Plots and "Abbreviations and Short hands"). The code required to generate the supplementary material is also included
+This section contains all supplementary material and is divided into three sections ("Abbreviations and Short hands", "Functions", "Tables" and "Plots"). The code required to generate the supplementary material is also included
 
 ## A.1 Abbrevations and Shorthands
 
@@ -268,7 +249,32 @@ medv: Median value of owner-occupied homes in $1000s.
 
 \newpage
 
-## A.2 Tables 
+## A.2 Functions
+
+```{r functions}
+# Table function with rounding (uses kable)
+table = function(dataset, cap, dp = 3){
+   kable(format(round(dataset, dp), nsmall = dp), caption = cap)
+}
+
+# Table function (non num)
+tableTxt = function(dataset, cap){
+  kable(dataset, caption = cap)
+}
+
+# Predict for reg subsets (no predict function)
+predict.regsubsets = function(object, newdata, id, ...) {
+  form = as.formula(object$call[[2]])
+  mat = model.matrix(form, newdata)
+  coefi = coef(object, id=id)
+  xvars = names(coefi)
+  return(mat[,xvars] %*% coefi)
+}
+```
+
+\newpage
+
+## A.3 Tables 
 
 ### Code to Generate Table \@ref(tab:mean-vector) (Transposed and Correct to 3DP)
 ```{r mean-vector}
@@ -342,7 +348,7 @@ table(as.data.frame(as.matrix(coef(lassoFit, s = 0.01629751))),
 
 \newpage
 
-## A.3 Plots
+## A.4 Plots
 
 ### Code to Generate Figure \@ref(fig:box-plot)
 ```{r box-plot, fig.cap='Box Plot'}
