@@ -1,7 +1,7 @@
 ---
 title: 'Statistical Learning Project'
-author: 'Ammar Hasan'
-date: '11 November 2018'
+author: 'Ammar Hasan 150454388'
+date: '25 November 2018'
 toc: true
 fig_caption: yes
 
@@ -30,9 +30,9 @@ data(Boston, package='nclSLR')
 
 # Introduction 
 
-This report summaries the steps undertaken to produce and evaluate linear regression models of the value of housing in Boston Standard Metropolitan to predict the value of logarithmic crime rate (lcrim) using other variables. The model would be built after exploratory and unsupervised statistical analysis of the data which is carried first to gain an understanding on the data characteristics and structure before hand. The models would be build using both sub-setting (best fit and step wise) and regularisation methods (LASSO and Ridge Fit) methods, these methods will be compared using k fold cross validation.
+This report summaries the steps undertaken to produce and evaluate linear regression models of the value of housing in Boston Standard Metropolitan. The model will be used to predict the value of logarithmic crime rate (lcrim) using other variables. The model would be built after exploratory and unsupervised statistical analysis of the data, which are carried first to gain an understanding on the data characteristics and structure before hand. The models would be build using both Subsetting (Best Fit) and Regularisation methods (LASSO and Ridge Fit) methods, these methods will be compared using $k$ Fold Cross Validation with $k = 10$.
 
-Any output (tables and plots) is placed in the Appendix at the end of the report with the R code that generated it, the description and analysis of the methods and their output is found in the document body which cross references the appendix content. Values in tables and other numerical results are corrected to 3 decimal places unless stated otherwise.
+Any output (tables and plots) is placed in the Appendix at the end of the report with the R code that generated it. The description and analysis of the methods is found in the document body which cross references the appendix content.
 
 # Exploratory Data Analysis
 
@@ -44,21 +44,19 @@ To analyse the distribution of the data, the quantiles and means will be examine
 
 ### Mean Vector
 
-Using the col means functions a vector of mean averages can be produced for all the predictors and the response variables in the Boston data-set. 
+A vector of mean averages was produced for all the predictors and the response variables in the Boston data-set and is shown in table \@ref(tab:mean-vector), and shows that the means are well spread out from one another, which suggests a difference in the nature and scale of the measurements.
 
-The returned table (transposed) is in table \@ref(tab:mean-vector) in Appendix A.2, and shows that the means are well spread out from one another, which suggests a difference in the nature of the measurements.
-
-Examining the structure of the variables in the Boston data set using the ?Boston confirms that the nature of the measurements vary from Full-value property-tax rate per $10,000 for tax to Nitrogen oxides parts per 10 million for nox for instance, which obviously suggests that the measurements cannot be directly compared scale to scale (standarisation might be required).
+Examining the structure of the variables in the Boston data set using the ?Boston confirms that the nature of the measurements vary from Full-value property-tax rate per $10,000 for tax to Nitrogen oxides parts per 10 million for nox for instance, which obviously suggests that the measurements cannot be directly compared scale to scale as this might cause values with larger scale to dominate (standarisation might be required).
 
 ### Box Plot and Quantiles
 
-As previously stated in the previous section, the variables are of different natures and scales, hence any scale to scale comparison needs standarisation. To standardise the data a scale transform was applied using the base R scale() function, and using the boxplot base function the plot in figure \@ref(fig:box-plot) is generated. 
+As previously stated in the last section, the variables are of different natures and scales, hence any scale to scale comparison needs standarisation. To standardise the data a scale transform was applied, and the variables spread was represented using a box plot in figure \@ref(fig:box-plot) is generated. 
 
 The following stands out of the plot:
 
-* black, rm, zn and medv predictor variables have significantly more outliers than the other variables.And hence more uncertain and also their averages can get skewed.
+* black, rm, zn and medv predictor variables have significantly more outliers than the other variables.And hence more uncertain and their averages can get skewed.
 
-* chas predictor variable seems to have a very tight ranges that are practically identical. This is because this is a binary variable.
+* chas predictor variable seems to have a very tight ranges that are practically identical. This is because this is a binary variable (as ?Boston would show).
 
 * zn, rad and tax predictor variables have a short Q1 to Q2 range compared to the Q2 to Q3 range, suggesting that the lower values of the data are very tightly clustered. black has the opposite problem.
 
@@ -73,13 +71,13 @@ This section of the report will look into how the variables (predictors and resp
 The following relationships stick out when observing the pairs plot for the response against other variables in figure \@ref(fig:pairs-plot):
 
 * Relationships/correlation with lcrime:
-    + age and medv has a moderate negative relationship with lcrime 
-    + nox and lstat has a strong/moderate positive relationship with lcrim
+    + age and medv have a moderate negative relationship with lcrime 
+    + nox and lstat have a strong/moderate positive relationship with lcrim
     + rm and zn both have weak/moderate negative relationships with lcrime
-    + tax, rad, pratio, indus and black appear to have unclear correlation
+    + tax, rad, pratio, indus and black appear to have unclear correlation from the plot.
     
 * Predictor variables relationships: 
-    - Some predictors have strong relations with one another: rm has a strong negative relationship with lstat but a strong positive one with medv. medv and lstat also have a strong/moderate negative relationship
+    - Some predictors have strong relations with one another: rm has a strong/moderate negative relationship with lstat but a strong positive one with medv. medv and lstat also have a strong/moderate negative relationship
 
 * Chas (river dummy variable) and disf (distance to Boston employment centered) appear to have values in levels and are also difficult to analyse in a pairs plot
 
@@ -90,24 +88,24 @@ The correlation matrix in table \@ref(tab:cor-matrix) confirms the findings of t
 
 * Chas has a very weak relationship with lcrime, and a weak or very weak relationship with most other variables.
 * disf has a moderate negative relationship with lcrime, a strong/moderate negative relationship with indus and a positive moderate relation with zn
-* Tax and rad have strong relationships with lcrime that were difficult to spot before due to irregularities in their plots. Moreover, indus has a moderate positive relationship with lcrime and ptartio a weak positive one.
+* Tax and rad have strong relationships with lcrime that were difficult to spot before due to irregularities in their plots. Moreover, indus has a moderate/strong positive relationship with lcrime and ptartio a weak positive one.
 * Tax and rad have a very strong positive relationship
 
 ### Data Relationships Summary
 
-To summarise, it seems that the relationships suggest that there are a couple of variables that might have a strong impact to model (e.g. rad or tax). Moreover, the relationships also suggest that many will be subsetted due to relationships that can be represented with other variables(e.g. rad or tax), or very poor relationships with all variables (e.g. chas).
+To summarise, it seems that the relationships suggest that there are a couple of variables that might have a strong impact to model (e.g. rad or tax). Moreover, the relationships also suggest that many will be subsetted due to relationships that can be represented with other variables (e.g. rad for tax, or vice versa) or because of very poor relationships with all variables (e.g. chas).
 
 \newpage
 
 # Unsupervised Learning
 
-This section looks into apply unsupervised learning techniques to help understanding patterns and structures in the data to help understand their effects on the model. In this report, Principle Component Analysis will be used to help find which set of predictors cause the most variation on the data to help with model coefficient interpretation and gaining an understanding of which predictors contribute to the model. 
+This section looks into applying unsupervised learning techniques to help in understanding patterns and structures in the data to interpret their effects on the model. In this report, Principle Component Analysis will be used to help find which set of predictors cause the most variation on the data to help with model coefficient interpretation. 
 
 ## Principle Component Analysis
 
 ### Variation Proportions
 
-Table \@ref(tab:pca-summary) shows the summary of PCA run on the data, showing the variance each PC to and the accumulation of it. The summary shows that the first component contributed to 50% of the variance, and the first 4 contribute to 70%. Since the first 3 contribute to 70% and also where the variation curve in the scree plot in \@ref(fig:scree-plot) diminishes for a second time. 
+Table \@ref(tab:pca-summary) shows the summary of PCA run on the data, showing the variance each PC to and the accumulation of it. The summary shows that the first component contributed to 50% of the variance, and the first 4 contribute to 70%. Since the first 3 contribute to 70% and also where the variation curve in the scree plot in figure \@ref(fig:scree-plot) diminishes for a second time, the first 3 PCs will be analysed. 
 
 
 ### Component Interpretation (According to Table \@ref(tab:pca-comps))
@@ -122,11 +120,11 @@ Dominated by negative rm and medv, meaning that it represents less median house 
 
 #### Component 3
 
-Dominated high accessibility highways, tax rate and residual areas.
+Dominated high accessibility highways (rad), tax rate (tax) and residual areas (zn).
 
 #### Plot
 
-A plot of the observations scores for component 1 vs component2 is shown in figure \@ref(fig:pca-plot) shows most observations score high for component 2 but are more varied for component 1. Meaning that most observations have relative low median house value and number of rooms, but a varied crime, pollution and non-retail business.
+A plot of the observations scores for component 1 vs component 2 is shown in figure \@ref(fig:pca-plot) shows most observations score high for component 2, but are more varied for component 1. Meaning that most observations have relative low median house value and number of rooms, but a varied crime, pollution and non-retail business.
 
 \newpage
 
@@ -138,7 +136,7 @@ In this section of the report linear models are fitting and tested against each 
 
 ### Subset Selection using Best Fit
 
-Best Fit Subset Selection Tries all possible predictors p combinations to find the "best" model using $SS_E$ (optimisation problem). The method's results are shown in table \@ref(tab:best-sub-select) as the selected best predictors from 13 variables (everything except lcrime) to 1 variable. The method was carried on scaled predictors because as explained in the exploratory data analysis the scales differ, which might cause the coefficients be to harder to compare as the values with the larger scales would dominate.
+Best Fit Subset Selection Tries all possible predictors $p$ combinations to find the "best" model using $SS_E$ (optimisation problem). The method's results are shown in table \@ref(tab:best-sub-select) as the selected best predictors from 13 variables (everything except lcrime) to 1 variable. The method was carried on scaled predictors because as explained in the exploratory data analysis the scales differ, which might cause the coefficients be to harder to compare as the values with the larger scales would dominate.
 
 #### Subsetting Results analysis
 
@@ -221,6 +219,10 @@ BIC: Bayesian Information Criterion
 LASSO: Least Absolute Shrinkage and Selection Operator
 
 CV: Cross Validation
+
+$p$: Predictors (number of)
+
+$n$: Rows/Observations (number of)
 
 ### Variable Shorthands
 
