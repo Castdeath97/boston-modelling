@@ -93,7 +93,7 @@ The correlation matrix in table \@ref(tab:cor-matrix) confirms the findings of t
 
 ### Data Relationships Summary
 
-To summarise, it seems that the relationships suggest that there are a couple of variables that might have a strong impact to model (e.g. rad or tax). Moreover, the relationships also suggest that many will be subsetted due to relationships that can be represented with other variables (e.g. rad for tax, or vice versa) or because of very poor relationships with all variables (e.g. chas).
+To summarise, it seems that the relationships suggest that there are a couple of variables that might have a strong impact to model (e.g. rad or tax). Moreover, the relationships also suggest that many will be subsetted due to relationships that can be represented with other variables (e.g. rad for tax, or vice avers) or because of very poor relationships with all variables (e.g. chas).
 
 \newpage
 
@@ -130,13 +130,13 @@ A plot of the observations scores for component 1 vs component 2 is shown in fig
 
 # Supervised Learning (Linear Modelling)
 
-In this section of the report linear models are fitting and tested against each other using K Fold Cross Validation. By the end of this section a summary will conclude which models are best and why.
+In this section of the report linear models are fitting and tested against each other using $K$ Fold Cross Validation, where $k = 10$ as it is usually the common choice and the default for the glmnet function. By the end of this section a summary will conclude what model is best and why.
 
 ## Model Fitting 
 
 ### Subset Selection using Best Fit
 
-Best Fit Subset Selection Tries all possible predictors $p$ combinations to find the "best" model using $SS_E$ (optimisation problem). The method's results are shown in table \@ref(tab:best-sub-select) as the selected best predictors from 13 variables (everything except lcrime) to 1 variable. The method was carried on scaled predictors because as explained in the exploratory data analysis the scales differ, which might cause the coefficients be to harder to compare as the values with the larger scales would dominate.
+Best Fit Subset Selection Tries all possible predictors $p$ combinations for every number of predictors to find the "best" model using $SS_E$ (optimisation problem). The method's results are shown in table \@ref(tab:best-sub-select) as the selected best predictors from 13 variables (everything except lcrime) to 1 variable. The method was carried on scaled predictors because as explained in the exploratory data analysis the scales differ, which might cause the coefficients be to harder to compare as the values with the larger scales would dominate.
 
 #### Subsetting Results analysis
 
@@ -150,45 +150,47 @@ Also, it can be noticed that usually the highest impacting predictors in the PCs
 
 Nonetheless, to decide which number of predictors would be the best choice, there are various techniques that can be followed to evaluate whether removing variables is worthwhile ($SS_E$ based or MSE based). 
 
-The results using based $SS_E$ measurements (Adjusted $R^2$, BIC, $Cp$) are shown in figure \@ref(fig:best-sub-cv), and they show that generally the  gain from dropping out predictors is optimal somewhere around 5-10 before becoming worse. 
+The results using based $SS_E$ measurements (Adjusted $R^2$, BIC, $Cp$) are shown in figure \@ref(fig:best-sub-cv), and they show that generally the gain from dropping out predictors is optimal somewhere around 6-10 predictors before becoming worse. 
  
-For the K Fold Cross Validation (10 fold picked here) also shown in figure \@ref(fig:best-sub-cv), the best result occurs with 9 predictors which is similar with other results (and is identical to the adjusted Cp choice), and since this measurement is based on experimentation with tests errors it is preferred. The 10 Fold Cross Validation choice of 9 predictors would result in chas, rm, mdev and tax being removed from the model.   
+For the $K$ Fold Cross Validation (10 fold picked here) also shown in figure \@ref(fig:best-sub-cv), the best result occurs with 9 predictors (is identical to the adjusted Cp choice), and since this measurement is based on experimentation with tests errors it is preferred. The 10 Fold Cross Validation choice of 9 predictors would result in chas, rm, mdev and tax being removed from the model.   
 
 #### Selected Subset Coefficient Discussion
 
-The resulting coefficients for the selected predictors is shown in table \@ref(tab:best-sub-coef), and seems to show nox and rad as the strongest positively influencing predictors. This lines up with nox and rad positive strength in the first PC in the PCA analysis and their strong positive correlation. The same can be observed with the strongest negative component (zn), which also were strong in PC1 and had strong negative correlation with lcrim . 
+The resulting coefficients for the selected predictors is shown in table \@ref(tab:best-sub-coef), and seems to show nox and rad as the strongest positively influencing predictors (largest positive values with the most positive impact on the response). This lines up with nox and rad positive strength in the first PC in the PCA analysis and their strong positive correlation. The same can be observed with the strongest negatively influencing component (zn) (negative effect on response), which also were strong in PC1 and had strong negative correlation with lcrim. The intercept represents what value (logarithmic) the lcrim predictor would take when all the other predictor values are equal to zero. And since the data is standardised, the values are equal to zero when they are the mean, which means the intercept would represent the response when all the other predictors are average.
 
 ### Ridge Regression 
 
-Ridge Regression uses a modified loss function to add a penalty to large coefficients to improve predictive solution (constraints variance). Ridge Regression also uses scaled data like Best Fit to avoid coefficients dominating due to scale differences.
+Ridge Regression uses a modified loss function to add a penalty to large coefficients to improve predictive solution (constraints variance). Ridge Regression method is also fed with scaled data here like Best Fit to avoid coefficients dominating due to scale differences.
 
 #### Lambda Choice 
 
-Lambda decides how much the algorithm penalties large coefficient, the more it does so the more the values slope down as seen in figure \@ref(fig:ridge-fit-lambdas). Most of the values seems clustered next to each other, except rad(8), nox(4) and zn, with rad especially dominating the coefficient sizes before dropping next to lambda 0. Nonetheless, to know which lambda choice would make the most sense, a 10 fold cross validation is carried in figure \@ref(fig:ridge-fit-cv) and shows that the MSE start low and only starts to pick pace and go up once it crosses $log(lambda) = 0$. The exact minimum MSD is not clear from the graph, but using the "lambda.min" field returns a ~0.006 minimum (correct to 3DP) for the lambda also as seen in figure's \@ref(fig:ridge-fit-cv) code.
+Lambda decides how much the algorithm penalties large coefficient, the more it does so the more the values slope down as seen in figure \@ref(fig:ridge-fit-lambdas). Most of the values seems clustered next to each other, except rad(8), nox(4) and zn (1), with rad especially dominating the coefficient sizes before dropping next to lambda 0. Nonetheless, to know which lambda choice would make the most sense, a 10 fold cross validation is carried in figure \@ref(fig:ridge-fit-cv) and shows that the MSE start low and only starts to pick pace and go up once it crosses $log(lambda) = 0$. The exact minimum MSE is not clear from the graph, but using the "lambda.min" field returns a ~0.006 minimum (correct to 3DP) for the lambda (as seen in figure's \@ref(fig:ridge-fit-cv) code).
 
 #### Selected Lambda Coefficent Discussion
 
-As seen in figure \@ref(fig:ridge-fit-lambdas), nox(7), zn(1) and rad(8) seemed to be the most dominant coefficients and this can also be observed in the exact values with ideal lambda (~0.006) seen in table \@ref(tab:ridge-fit-coef). The coefficients selected seem similar to the coefficients seen with best subset selection, but with slightly different values due to the adjusted algorithim and no subsetting (all ps). Nonetheless, just like the Best Subset coefficient, the values most correlated to lcrime and the strongest in PC1 generally being the most dominant as discussed with the Best Subset coefficients. 
+As seen in figure \@ref(fig:ridge-fit-lambdas), nox(7), zn(1) and rad(8) seemed to be the most dominant coefficients and this can also be observed in the exact values with ideal lambda (~0.006) seen in table \@ref(tab:ridge-fit-coef). The coefficients selected seem similar to the coefficients seen with best subset selection and hence the discussion of the most dominant values can be reiterated here, but with slightly different values due to the adjusted algorithm and no subsetting (all $p$'s). Nonetheless, just like the Best Subset coefficient, the values most correlated to lcrime and the strongest in PC1 generally being the most dominant as discussed with the Best Subset coefficients. Lastly, the intercept is similar and represents the response when all the other predictors are average.
 
 ### LASSO
 
-LASSO is quite similar to Ridge Regression, however unlike ridge regression which always gets all p variables LASSO can subset (coefficients can become zero). This is because of the modified $SS_E$ which takes the absolute value instead of the square of each coefficient. LASSO also uses scaled data like like the other techinques to avoid coefficients dominating due to scale differences.
+LASSO is quite similar to Ridge Regression, however unlike ridge regression which always gets all p variables LASSO can subset (coefficients can become zero). This is because of the modified $SS_E$ which takes the absolute value instead of the square of each coefficient. LASSO is also fed with scaled data here like the other two techniques to avoid coefficients dominating due to scale differences.
 
 #### Lambda Choice
 
-Similarly to Ridge Regression, lambda decides how much the algorithm penalises large coefficients. The values of coefficients against lambda can be seen in \@ref(fig:lasso-lambdas), the dominant coefficients are similar to Ridge, but some of the coefficient eventually converge to zero. Nonetheless, as with Ridge Regression, to find the ideal lambda value MSE in a 10 fold cross validation is used, and as seen in \@ref(fig:ridge-fit-cv). The shape of the error plot is quite similar, but this time it returns a minimum ~0.0163.
+Similarly to Ridge Regression, lambda decides how much the algorithm penalises large coefficients. The values of coefficients against lambda can be seen in figure \@ref(fig:lasso-lambdas), the dominant coefficients are similar to Ridge, but some of the coefficient eventually converge to zero. Nonetheless, as with Ridge Regression, to find the ideal lambda value MSE in a 10 fold cross validation is used, and as seen in figure \@ref(fig:ridge-fit-cv). The shape of the error plot is slightly different and this time it returns a minimum ~0.0163 (correct to 3DP).
 
 #### Selected Lambda Coefficent Discussion
 
-The values for the coefficients are quite similar to Ridge Regression coeficients disincluding 0.00 predictors, but since LASSO's main difference with Ridge regression is its ability to subset the predictors they will be the main concern of this discussion. It seems LASSO decided to subset tax, medv, rm and chas (at least correct to 3 DP), which are the same as the ones subsetted by the Best Fit (with 9 predictors), which as stated in its analysis are subsetted for being weakly correlated with lcrim (chas) or being correlated with other predictors that can represent them (tax, rm and medv).
+The values for the coefficients are quite similar to Ridge Regression coefficients dis-including 0.00 predictors, so again, the most positively/negatively response influencing predictors are similar minus the subsetted ones and the similar intercept represents the response when all the other predictors are average. Nonetheless, since LASSO's main difference with Ridge regression is its ability to subset the predictors they will be the main concern of this discussion. It seems LASSO decided to subset tax, medv, rm and chas (at least correct to 3 DP), which are the same as the ones subsetted by the Best Fit (with 9 predictors), which as stated in its analysis are subsetted for being weakly correlated with lcrim (chas) or being correlated with other predictors that can represent them (tax, rm and medv). 
 
 ## Model Evaluation Using k-fold Cross Validation and Best Model
 
-To evaluate all the models using cross validation, it is important to ensure that they use the same folds for the cross validation. To do this, the indexes for the folds for subset cross validation (using 10 folds) are passed to the regularisation fittings (LASSO and Ridge). The results are presented in Figure \@ref(fig:cv-comparisons). 
+To evaluate all the models using cross validation, it is important to ensure that they use the same observations in the folds for the cross validation. To do this, the indexes for the folds for subset cross validation (using 10 folds) are passed to the regularisation fittings (LASSO and Ridge). The results are presented in figure \@ref(fig:cv-comparisons). 
 
-As seen in figure \@ref(fig:cv-comparisons) the regularisation methods (LASSO and Ridge Fit) and the subsetting method (Best Fit) seem to perform similarily for the given data. Best Fit seems to be the best, then LASSO then Ridge Fit. 
+As seen in figure \@ref(fig:cv-comparisons) the regularisation methods (LASSO and Ridge Fit) and the subsetting method (Best Fit) seem to perform similarly for the given data. Best Fit seems to be the best, then LASSO then Ridge Fit. 
 
-Nonetheless, the regularisation methods would be the better bet, since Best Fit is incredibly slow due its exhaustive methods and the advantage is that it provides in exchange is small. For the regularisation methods, since LASSO requires less predictors it should be more convienent and easier to use and hence is my choice of out of the two. LASSO had subsetted out chas, rm, tax and medv as stated before either because they had poor correlation with the response (lcrim) or could be represented by other predictors (rm, tax and medv). 
+Nonetheless, the regularisation methods would be the better bet, since Best Fit is incredibly slow due its exhaustive methods and the advantage is that it provides in exchange is small. For the regularisation methods, since LASSO requires less predictors it should be more convenient and easier to use and hence is my choice of out of the two. LASSO had subsetted out chas, rm, tax and medv as stated before either because they had poor correlation with the response (lcrim) or could be represented by other predictors (rm, tax and medv). 
+
+Lastly, it is important to be careful when using these models, because as stated in the Box Plots and Quantiles analysis, some of the variables have a lot of extreme values and outliers and this might effect the reliability of the models. While the regularisation method penalty helps in reducing the effect of extreme values, they might still not be complete immune to their effects.
 
 \newpage
 
@@ -285,7 +287,7 @@ predict.regsubsets = function(object, newdata, id, ...) {
 
 ### Code to Generate Table \@ref(tab:mean-vector) (Transposed and Correct to 3DP)
 ```{r mean-vector}
-table(colMeans(Boston), '')
+table(colMeans(Boston), 'Variables Mean Vector')
 ```
 
 \blandscape
@@ -330,13 +332,14 @@ tableTxt(bssSummary$outmat, "Best Subset Selection")
 
 \elandscape
 
+### Code to Generate Table \@ref(tab:best-sub-coef)
 ```{r best-sub-coef}
 # use coef function to find the coefficient 
 # id represents the choice for predictor number
 table(coef(bss, id = 9), "Best Subset Coefficient Selection (9 Predictors)")
 ```
 
-
+### Code to Generate Table \@ref(tab:ridge-fit-coef)
 ```{r ridge-fit-coef}
 ## Fit a ridge regression model with idea lambda (~0.006)
 ridgeFit = glmnet(X, y, alpha=0, standardize=FALSE, lambda= 0.006428073)
@@ -344,7 +347,7 @@ table(as.data.frame(as.matrix(coef(ridgeFit, s = 0.006428073))),
       "Ridge Regression Coefficients with Lambda = ~0.006")
 ```
 
-
+### Code to Generate Table \@ref(tab:lasso-coef)
 ```{r lasso-coef}
 ## Fit a LASSO regression model with idea lambda (~0.016)
 lassoFit = glmnet(X, y, alpha=1, standardize=FALSE, lambda= 0.01629751)
